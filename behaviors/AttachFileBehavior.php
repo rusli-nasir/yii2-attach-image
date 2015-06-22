@@ -16,7 +16,7 @@ class AttachFileBehavior extends Behavior
 
     const EVENT_AFTER_ATTACH_DATA = 'afterAttachData';
 
-    public $attributeName = 'file_path';
+    public $attributeName = 'file';
 
     //events can attach
     public $attachEvents = [BaseActiveRecord::EVENT_BEFORE_INSERT, BaseActiveRecord::EVENT_BEFORE_UPDATE];
@@ -39,15 +39,7 @@ class AttachFileBehavior extends Behavior
     }
 
     public function getModelBasedDir() {
-        $dir = basename($this->owner->className());
-        foreach($this->owner->getBehaviors() as $name => $behavior) {
-            if ($behavior === $this) {
-                $behaviorName = $name;
-                break;
-            }
-        }
-        if (isset($behaviorName)) $dir .= self::PS . $behaviorName;
-        return strtolower($dir);
+        return strtolower(basename($this->owner->className()) . self::PS . $this->attributeName);
     }
 
     protected $_basePath = '@webroot';
@@ -225,12 +217,12 @@ class AttachFileBehavior extends Behavior
 
     public static function getUploadedFileExtension($uploadedFile)
     {
-        if ($uploadedFile->extension) return $uploadedFile->extension;
+        if ($uploadedFile->extension) return strtolower($uploadedFile->extension);
         $mimeType = FileHelper::getMimeType($uploadedFile->tempName);
-        if ($mimeType === null)  $mimeType = $uploadedFile->type;
+        if ($mimeType === null) $mimeType = $uploadedFile->type;
            $extensions = FileHelper::getExtensionsByMimeType($mimeType);
         if (!empty($extensions)) {
-            return $extensions[0];
+            return strtolower($extensions[0]);
         }
     }
 
@@ -243,7 +235,7 @@ class AttachFileBehavior extends Behavior
         }
         if ($this->_processUploadedData === null) {
             $extension = static::getUploadedFileExtension($file);
-            $this->generateAttr(strtolower($extension));
+            $this->generateAttr($extension);
             $filePath = $this->getPath();
             if (!FileHelper::createDirectory(dirname($filePath))) return false;
             if (!$file->saveAs($filePath)) return false;

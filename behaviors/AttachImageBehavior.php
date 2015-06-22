@@ -2,6 +2,7 @@
 namespace salopot\attach\behaviors;
 
 
+use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\FileHelper;
@@ -39,9 +40,7 @@ class AttachImageBehavior extends AttachFileBehavior
      */
     public $contentOptions;
 
-    public $attributeName = 'image_path';
-
-    protected $_relativeTypeDir = null;
+    public $attributeName = 'image';
 
     protected $types = array();
 
@@ -53,14 +52,25 @@ class AttachImageBehavior extends AttachFileBehavior
         return $this->_relativeDir;
     }
 
+    /**
+     * @var mixed
+     * If value NULL then init default, if value FALSE then use RelativeDir
+     */
+    protected $_relativeTypeDir;
+
     public function getRelativeTypeDir()
     {
-        return ($this->_relativeTypeDir !== null) ? $this->_relativeTypeDir : $this->getRelativeDir();
+        if ($this->_relativeTypeDir === null) {
+            $this->_relativeTypeDir = 'upload/thumb/' . $this->getModelBasedDir();
+        } elseif ($this->_relativeTypeDir === false) {
+            return $this->getRelativeDir();
+        }
+        return $this->_relativeTypeDir;
     }
 
     public function setRelativeTypeDir($value)
     {
-        $this->_relativeTypeDir = ltrim(FileHelper::normalizePath($value, self::PS), self::PS);
+        $this->_relativeTypeDir = is_string($value) ? ltrim(FileHelper::normalizePath($value, self::PS), self::PS) : $value;
     }
 
     public function setTypes($value)
@@ -105,16 +115,19 @@ class AttachImageBehavior extends AttachFileBehavior
     }
 
 
+    protected function getExt($type)
+    {
+        $params = $this->getTypeParams($type);
+        return isset($params['format']) ? $params['format'] : pathinfo($this->getAttribute(), PATHINFO_EXTENSION);
+    }
+
     protected function getRelativePath($type = null)
     {
         if ($type !== null) {
             if ($this->getHasAttachLink()) {
-                $params = $this->getTypeParams($type);
-                $fileName = $this->getAttribute();
-                $sourceInfo = pathinfo($fileName);
+                $fileName = pathinfo($this->getAttribute(), PATHINFO_FILENAME);
                 $relPath = $this->getRelativeTypeDir() ? $this->getRelativeTypeDir() . self::PS : '';
-                $ext = isset($params['format']) ? '.' . $params['format'] : (isset($sourceInfo['extension']) ? '.' . $sourceInfo['extension'] : '');
-                return $relPath . self::pathByName($sourceInfo['filename'] . '_' . $type . $ext, $this->getDirectoryLevel());
+                return $relPath . self::pathByName($fileName . '_' . $type . '.' . $this->getExt($type), $this->getDirectoryLevel());
             } else
                 return false;
         } else
@@ -169,7 +182,6 @@ class AttachImageBehavior extends AttachFileBehavior
 
     public static function getUploadedFileExtension($uploadedFile)
     {
-        if ($uploadedFile->extension) return $uploadedFile->extension;
         $ext = parent::getUploadedFileExtension($uploadedFile);
         if (in_array($ext, ['jpe', 'jpg'])) $ext = 'jpeg'; //jpeg for gd
         return $ext;
@@ -189,11 +201,6 @@ class AttachImageBehavior extends AttachFileBehavior
             return false;
     }
 
-
-    protected function getExt($type)
-    {
-        return strtolower(pathinfo($this->getRelativePath($type), PATHINFO_EXTENSION));
-    }
 
     public function processTypeImage($type, $save = true, $overwrite = false) {
         $params = $this->getTypeParams($type);

@@ -1,6 +1,6 @@
 {
     "name": "salopot/yii2-attach-image",
-    "description": "Provides behaviors for attach files to model and manipulate if files is image",
+    "description": "Provides behaviors for attach files to model and manipulate it if files is image",
     "type": "yii2-extension",
     "keywords": ["yii2","extension","upload","image","thumb","attach"],
     "license": "MIT",
