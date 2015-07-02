@@ -79,12 +79,12 @@ class AttachFileBehavior extends Behavior
         return $this->_directoryLevel;
     }
 
-    protected function getAttribute()
+    public function getAttribute()
     {
         return $this->owner->getAttribute($this->attributeName);
     }
 
-    protected function setAttribute($value)
+    public function setAttribute($value)
     {
         $this->owner->setAttribute($this->attributeName, $value);
     }
@@ -215,6 +215,13 @@ class AttachFileBehavior extends Behavior
         }
     }
 
+    public function clear() {
+        if ($this->getHasAttachData()) {
+            $this->clearFilePath($this->getPath());
+            $this->setAttribute(null);
+        }
+    }
+
     public static function getUploadedFileExtension($uploadedFile)
     {
         if ($uploadedFile->extension) return strtolower($uploadedFile->extension);
@@ -259,10 +266,16 @@ class AttachFileBehavior extends Behavior
     public function beforeSave($event)
     {
         //restore attribute value cleared by file validator
-        if (!$this->owner->getIsNewRecord() && $this->getAttribute() == '') {
-            $fileName = $this->owner->getOldAttribute($this->attributeName);
-            if ($fileName !== null) {
-                $this->setAttribute($fileName);
+        $newValue = $this->getAttribute();
+        if (!$this->owner->getIsNewRecord() && empty($newValue)) {
+            $oldValue = $this->owner->getOldAttribute($this->attributeName);
+
+            //clear if has no file
+            if (!empty($oldValue)) {
+                $this->setAttribute($oldValue);
+                if (!$this->getHasAttachData()) {
+                    $this->setAttribute($newValue);
+                }
             }
         }
         if (in_array($event->name, $this->attachEvents)) {
