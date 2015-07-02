@@ -216,9 +216,7 @@ class AttachFileBehavior extends Behavior
     }
 
     public function clear() {
-        if ($this->getHasAttachData()) {
-            $this->clearFilePath($this->getPath());
-        }
+        $this->clearAttachData();
         $this->setAttribute(null);
     }
 
