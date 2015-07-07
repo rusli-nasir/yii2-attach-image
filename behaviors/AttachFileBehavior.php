@@ -39,7 +39,7 @@ class AttachFileBehavior extends Behavior
     }
 
     public function getModelBasedDir() {
-        return strtolower(basename($this->owner->className()) . self::PS . $this->attributeName);
+        return strtolower(basename(str_replace('\\', self::PS, $this->owner->className())) . self::PS . $this->attributeName);
     }
 
     protected $_basePath = '@webroot';
