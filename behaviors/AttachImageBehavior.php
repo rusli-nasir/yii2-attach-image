@@ -207,6 +207,10 @@ class AttachImageBehavior extends AttachFileBehavior
         $destination = $this->getTypePath($type);
         if ($overwrite || !file_exists($destination)) {
             $source = $this->getPath();
+            if(!file_exists($source)) {
+                Yii::error('Not found base path: "'. $source.'"');
+                return null;
+            }
             $image = call_user_func($this->getImageLoaderCallback(), $this, $source);
             if (($image = call_user_func($params['process'], $this, $image)) === null)
                 throw new InvalidConfigException('Process property must return image instance');
