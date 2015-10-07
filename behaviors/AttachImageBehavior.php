@@ -180,10 +180,9 @@ class AttachImageBehavior extends AttachFileBehavior
         parent::clearAttachData();
     }
 
-    public static function getUploadedFileExtension($uploadedFile)
-    {
-        $ext = parent::getUploadedFileExtension($uploadedFile);
-        if (in_array($ext, ['jpe', 'jpg'])) $ext = 'jpeg'; //jpeg for gd
+    public static function getExtensionByMimeType($mimeType) {
+        $ext = parent::getExtensionByMimeType($mimeType);
+        if (in_array($ext, ['jpe', 'jpeg'])) $ext = 'jpg'; //jpeg for gd
         return $ext;
     }
 

@@ -220,15 +220,50 @@ class AttachFileBehavior extends Behavior
         $this->setAttribute(null);
     }
 
+    public static function getExtensionByMimeType($mimeType) {
+        $extensions = FileHelper::getExtensionsByMimeType($mimeType);
+        if (empty($extensions)) return false;
+        return mb_strtolower($extensions[0], 'utf-8');
+    }
+
     public static function getUploadedFileExtension($uploadedFile)
     {
         if ($uploadedFile->extension) return strtolower($uploadedFile->extension);
         $mimeType = FileHelper::getMimeType($uploadedFile->tempName);
         if ($mimeType === null) $mimeType = $uploadedFile->type;
-           $extensions = FileHelper::getExtensionsByMimeType($mimeType);
-        if (!empty($extensions)) {
-            return strtolower($extensions[0]);
+        return static::getExtensionByMimeType($mimeType);
+    }
+
+    public function attachFile($file, $moveFile = false) {
+        if (!$this->owner->getIsNewRecord()) {
+            $this->clearAttachData();
         }
+        $extension = pathinfo($file, PATHINFO_EXTENSION);
+        if (empty($extension)) {
+            $extension = static::getExtensionByMimeType( FileHelper::getMimeType($file) );
+        }
+        $this->generateAttr($extension);
+        $filePath = $this->getPath();
+        if (!FileHelper::createDirectory(dirname($filePath))) return false;
+        if ($moveFile) {
+            if(!rename($file, $filePath)) return false;
+        } else {
+            if (!copy($file, $filePath)) return false;
+        }
+        return true;
+    }
+
+    public function attachContent($data, $mimeType) {
+        if (!$this->owner->getIsNewRecord()) {
+            $this->clearAttachData();
+        }
+        $extension = static::getExtensionByMimeType($mimeType);
+        if ($extension === false) return false;
+        $this->generateAttr($extension);
+        $filePath = $this->getPath();
+        if (!FileHelper::createDirectory(dirname($filePath))) return false;
+        if (@file_put_contents($filePath, $data) === false) return false;
+        return true;
     }
 
     protected function attachUploadedFile()
@@ -239,7 +274,7 @@ class AttachFileBehavior extends Behavior
             $this->clearAttachData();
         }
         if ($this->_processUploadedData === null) {
-            $extension = static::getUploadedFileExtension($file);
+            $extension = self::getUploadedFileExtension($file);
             $this->generateAttr($extension);
             $filePath = $this->getPath();
             if (!FileHelper::createDirectory(dirname($filePath))) return false;
